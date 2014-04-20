@@ -503,7 +503,7 @@ int btrfs_read_and_process_send_stream(int fd,
 	}
 
 	sctx.version = le32_to_cpu(hdr.version);
-	if (sctx.version > BTRFS_SEND_STREAM_VERSION) {
+	if (sctx.version > BTRFS_SEND_STREAM_VERSION_MAX) {
 		ret = -EINVAL;
 		error("stream version %d not supported, please use newer version",
 				sctx.version);
