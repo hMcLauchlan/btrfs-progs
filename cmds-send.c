@@ -53,6 +53,7 @@
  */
 static int g_verbose = 1;
 static int g_stream_version = BTRFS_SEND_STREAM_VERSION_1;
+static int g_total_data_size = 0;
 
 struct btrfs_send {
 	int send_fd;
@@ -346,6 +347,8 @@ static int do_send(struct btrfs_send *send, u64 parent_root_id,
 		io_send.flags |= BTRFS_SEND_FLAG_OMIT_END_CMD;
 	if (g_stream_version == BTRFS_SEND_STREAM_VERSION_2)
 		io_send.flags |= BTRFS_SEND_FLAG_STREAM_V2;
+	if (g_total_data_size)
+		io_send.flags |= BTRFS_SEND_FLAG_CALCULATE_DATA_SIZE;
 	ret = ioctl(subvol_fd, BTRFS_IOC_SEND, &io_send);
 	if (ret < 0) {
 		ret = -errno;
@@ -519,7 +522,7 @@ int cmd_send(int argc, char **argv)
 			{ "no-data", no_argument, NULL, GETOPT_VAL_SEND_NO_DATA },
 			{ "stream-version", 1, NULL, 'V' },
 		};
-		int c = getopt_long(argc, argv, "vqec:f:i:p:", long_options, NULL);
+		int c = getopt_long(argc, argv, "vqesc:f:i:p:", long_options, NULL);
 
 		if (c < 0)
 			break;
@@ -619,6 +622,9 @@ int cmd_send(int argc, char **argv)
 				goto out;
 			}
 			break;
+		case 's':
+			g_total_data_size = 1;
+			break;
 		case GETOPT_VAL_SEND_NO_DATA:
 			send_flags |= BTRFS_SEND_FLAG_NO_FILE_DATA;
 			break;
@@ -632,6 +638,14 @@ int cmd_send(int argc, char **argv)
 
 	if (check_argc_min(argc - optind, 1))
 		usage(cmd_send_usage);
+
+	if (g_total_data_size &&
+	    g_stream_version < BTRFS_SEND_STREAM_VERSION_2) {
+		fprintf(stderr,
+			"ERROR: option total data size (-s) requires use of the send stream version 2 or higher\n");
+		ret = 1;
+		goto out;
+	}
 
 	if (outname[0]) {
 		int tmpfd;
@@ -798,7 +812,7 @@ out:
 }
 
 const char * const cmd_send_usage[] = {
-	"btrfs send [-ve] [--stream-version <version>] [-p <parent>] [-c <clone-src>] [-f <outfile>] <subvol> [<subvol>...]",
+	"btrfs send [-ves] [--stream-version <version>] [-p <parent>] [-c <clone-src>] [-f <outfile>] <subvol> [<subvol>...]",
 	"Send the subvolume(s) to stdout.",
 	"Sends the subvolume(s) specified by <subvol> to stdout.",
 	"<subvol> should be read-only here.",
@@ -831,5 +845,10 @@ const char * const cmd_send_usage[] = {
 	"--stream-version <version>  Ask the kernel to produce a specific send stream",
 	"                            version. More recent stream versions provide new",
 	"                            features and better performance. Default value is 1.",
+	"-s                          Obtain the total data size for each subvolume or ",
+	"                            snapshot to send. This demands additional processing",
+	"                            (mostly IO bound) but is useful for the receive ",
+	"                            command to report progress. This option requires use",
+	"                            of the send stream version 2 or higher.",
 	NULL
 };
