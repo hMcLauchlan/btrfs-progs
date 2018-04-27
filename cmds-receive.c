@@ -40,6 +40,7 @@
 #include <sys/xattr.h>
 #include <uuid/uuid.h>
 #include <linux/falloc.h>
+#include <linux/fs.h>
 
 #include "ctree.h"
 #include "ioctl.h"
@@ -1200,6 +1201,36 @@ out:
 	return ret;
 }
 
+static int process_chattr(const char *path, u64 flags, void *user)
+{
+	int ret = 0;
+	int fd = 0;
+	int _flags = flags;
+	struct btrfs_receive *rctx = user;
+	char full_path[PATH_MAX];
+
+	ret = path_cat_out(full_path, rctx->full_subvol_path, path);
+	if (ret < 0) {
+		error("chattr: path invalid: %s", path);
+		goto out;
+	}
+
+	if (g_verbose >= 2)
+		fprintf(stderr, "chattr %s - flags=0%o\n", path, (int)flags);
+
+	fd = open(full_path, O_RDONLY);
+	ret = ioctl(fd, FS_IOC_SETFLAGS, &_flags);
+
+	if (ret < 0) {
+		ret = -errno;
+		error("chattr %s failed: %s", path, strerror(-ret));
+		goto out;
+	}
+
+out:
+	return ret;
+}
+
 static struct btrfs_send_ops send_ops = {
 	.subvol = process_subvol,
 	.snapshot = process_snapshot,
@@ -1224,6 +1255,7 @@ static struct btrfs_send_ops send_ops = {
 	.update_extent = process_update_extent,
 	.total_data_size = process_total_data_size,
 	.fallocate = process_fallocate,
+	.chattr = process_chattr,
 };
 
 static int do_receive(struct btrfs_receive *rctx, const char *tomnt,

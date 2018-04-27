@@ -69,6 +69,7 @@ struct btrfs_send_ops {
 	int (*total_data_size)(u64 size, void *user);
 	int (*fallocate)(const char *path, u32 flags, u64 offset,
 			 u64 len, void *user);
+	int (*chattr)(const char *path, u64 flags, void *user);
 };
 
 int btrfs_read_and_process_send_stream(int fd,

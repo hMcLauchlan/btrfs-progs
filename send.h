@@ -103,8 +103,8 @@ enum btrfs_send_cmd {
 	 */
 	BTRFS_SEND_C_TOTAL_DATA_SIZE,
 	BTRFS_SEND_C_FALLOCATE,
-	BTRFS_SEND_C_INODE_SET_FLAGS,
 	BTRFS_SEND_C_UTIMES2, /* Same as UTIMES, but it includes OTIME too. */
+	BTRFS_SEND_C_CHATTR,
 
 	__BTRFS_SEND_C_MAX,
 };
@@ -148,7 +148,7 @@ enum {
 	 * The following attributes were added in stream version 2.
 	 */
 	BTRFS_SEND_A_FALLOCATE_FLAGS, /* 32 bits */
-	BTRFS_SEND_A_INODE_FLAGS,     /* 32 bits */
+	BTRFS_SEND_A_CHATTR,	      /* 32 bits */
 
 	__BTRFS_SEND_A_MAX,
 };

@@ -470,6 +470,11 @@ static int read_and_process_cmd(struct btrfs_send_stream *sctx)
 						sctx->user);
 		}
 		break;
+	case BTRFS_SEND_C_CHATTR:
+		TLV_GET_STRING(sctx, BTRFS_SEND_A_PATH, &path);
+		TLV_GET_U64(sctx, BTRFS_SEND_A_CHATTR, &tmp);
+		ret = sctx->ops->chattr(path, tmp, sctx->user);
+		break;
 	case BTRFS_SEND_C_END:
 		ret = 1;
 		break;

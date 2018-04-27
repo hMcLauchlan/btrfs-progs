@@ -330,6 +330,11 @@ static int print_fallocate(const char *path, u32 flags, u64 offset, u64 len,
 			  len);
 }
 
+static int print_chattr(const char *path, u64 flags, void *user)
+{
+	return PRINT_DUMP(user, path, "chattr", "flags=%llu", flags);
+}
+
 struct btrfs_send_ops btrfs_print_send_ops = {
 	.subvol = print_subvol,
 	.snapshot = print_snapshot,
@@ -354,4 +359,5 @@ struct btrfs_send_ops btrfs_print_send_ops = {
 	.update_extent = print_update_extent,
 	.total_data_size = print_total_data_size,
 	.fallocate = print_fallocate,
+	.chattr = print_chattr,
 };
